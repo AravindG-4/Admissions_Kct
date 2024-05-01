@@ -1,0 +1,5 @@
+easyocr
+pymupdf
+together
+json
+flask
