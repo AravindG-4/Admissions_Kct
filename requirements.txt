@@ -3,3 +3,5 @@ pymupdf
 together
 json
 flask
+shutil
+werkzeug

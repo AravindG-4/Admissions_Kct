@@ -3,49 +3,74 @@ import easyocr
 import fitz
 import json
 from together import Together
+from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 
+def get_prompt(text, type='marksheet'):
+    if type == 'marksheet':
+        marksheet_prompt = f'''The following is the extracted unstructured text data from a 10th standard marksheet of an Indian student. The different extracted words are separated in order by commas.
 
-def retrieve_json_from_text(text):
-    # Correct the format of the text
-    text = "{" + text.strip('[]') + "}"
+Your task is only to create a JSON containing key-value pairs for the given key format in order.
 
-    # Parse JSON string to obtain dictionary
-    json_data = json.loads(text)
+The below mentioned parameters should be the keys of the JSON in the following given format. If you are not confident at any of the value for the following key, make it as to None.
 
-    return json_data
-
-
-# def get_json_data(text):
+The unstructured data : {text}
+The json key format : [Certificate Number, Board of Examination, Name, Month & Year, Father Name, Mother Name, Subject (dictionary with Multiple key), Total Marks, DOB, Roll Number, Medium of Instruction, Permanent Register Number, TMR Code, School Name, Place, District, State]
     
+    NOTE : The order of the key format must be maintained as given above.
+    
+IMPORTANT : Subject key must contain a dictionary as value with different subject name and respective mark as value.
+IMPORTANT : Return only a json string with only given keys and avoid any other information in the output.'''
+        return marksheet_prompt
 
-#         from together import Together
+    elif type == 'aadhaar':
+        aadhaar_prompt = f'''The following is the unstructured text data of a indian aadhar card of a student extracted using the EasyOCR package. The different extracted words are separated in order by commas.
 
-#         client = Together(api_key="9a61e2798de6101e801d7784c4ccdd6baab3384475b91b2b5114f925c74339c2")
+Your task is only to create a JSON containing key-value pairs for the given key format in order.
 
-#         response = client.chat.completions.create(
-#             model="meta-llama/Llama-3-8b-chat-hf",
-#             messages=[{"role": "user", "content": f"{text}"}],)
-        
+The below mentioned parameters should be the keys of the JSON in the following given format. If you are not confident at any of the value for the following key, make it as to None.
 
+The unstructured data : {text}
+The json key format : [Enrollment Number, Name, Father Name, Place, District, State, Phone number, Aadhaar number, DOB, Gender]
 
-#         # st.write(name_reg)
-#         msg = response.choices[0].message.content
-#         print(msg)
-#         return msg
+    NOTE : The order of the key format must be maintained as given above.
+
+IMPORTANT : Return only a json string for given keys and avoid any other information in the output.
+'''
+        return aadhaar_prompt
+
+    else:
+        general_prompt = f'''The following is the unstructured text data of a indian aadhar card of a student extracted using the EasyOCR package. The different extracted words are separated in order by commas.
+
+Your task is only to create a JSON containing key-value pairs for the given key format in order.
+
+The below mentioned parameters should be the keys of the JSON in the following given format. If you are not confident at any of the value for the following key, make it as to None.
+
+The unstructured data : {text}
+The json key format : [Enrollment Number, Name, Father Name, Place, District, State, Phone number, Aadhaar number, DOB, Gender]
+
+    NOTE : The order of the key format must be maintained as given above.
+
+IMPORTANT : Return only a json string for given keys and avoid any other information in the output.
+'''
+        return general_prompt
 
 def get_json(text):
     
-        client = Together(api_key='9a61e2798de6101e801d7784c4ccdd6baab3384475b91b2b5114f925c74339c2')
+        client = Together(api_key=os.getenv('TOGETHER_API_KEY'))
+
+        prompt = get_prompt(text)
 
         response = client.chat.completions.create(
-            model="meta-llama/Llama-3-8b-chat-hf",
-            messages=[{"role": "user", "content": f"Extract all the possible information about the person in a json format from the text and return only the json.IMPORTANT:Extract only the personal informations like name , state , address, district , marks , aadhar number , Date of Birth , father name and mother name . {text}"}],)
+            model="meta-llama/Llama-3-70b-chat-hf",
+            messages=[{"role": "user", "content": prompt}],)
         
 
 
-        # st.write(name_reg)
         msg = response.choices[0].message.content
         print(msg)
         return msg
@@ -63,6 +88,7 @@ def convert_pdf_to_images(pdf_path, output_folder, docname, zoom=2):
   for i, page in enumerate(doc):
       pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
       filename = os.path.join(output_folder, f"{docname}page_{i+1}.png")
+      
       pix.save(filename)
       imgs.append(filename)
   print(f"Converted PDF to {len(doc)} images in {output_folder}")
@@ -73,7 +99,7 @@ def convert_pdf_to_images(pdf_path, output_folder, docname, zoom=2):
 def convert_to_text(imgs):
 
     
-    reader = easyocr.Reader(['en'] , gpu = True)  # Specify the language(s) you want to perform OCR in
+    reader = easyocr.Reader(['en'] , gpu = True)  
 
     text = []
     for image_path in imgs:
@@ -95,22 +121,40 @@ def get_unstructured_data(imgs):
     return easyocr_detection
 
 
-import os
 
 def get_file_names_with_folder(folder_path):
-    # List to store file names
+
     file_names = []
     
-    # Iterate over all files in the folder
     for file_name in os.listdir(folder_path):
-        # Check if the path is a file (not a directory)
+
         if os.path.isfile(os.path.join(folder_path, file_name)):
-            # Concatenate folder name with file name
+
             file_names.append(os.path.join(folder_path, file_name))
     
     return file_names
 
-from werkzeug.utils import secure_filename
+def extract_last_index(raw_text):
+    for i in range(-1 , ~len(raw_text) , -1):
+      if raw_text[i] == "}":
+        return i
+
+def extract_first_index(raw_text):
+    for i in range(len(raw_text)):
+      if raw_text[i] == "{":
+        return i
+
+def retrieve_json_from_text(text):
+
+    print("In retrieve function " , text)
+    
+    json_data = eval(text)
+
+    print(json_data)
+    print(type(json_data))
+
+    return json_data
+
 def start_processing(file_names):
     
     file_path = []
@@ -124,57 +168,24 @@ def start_processing(file_names):
         # with open(file_path, 'wb+') as destination:
         #         for chunk in pdf.chunks():
                     # destination.write(chunk)
-        print("Completed 1st pdf")
     
-    text = ""
-  
-#   media_folder ="./uploads"
-#   if not os.path.exists(media_folder):
-#     os.makedirs(media_folder)
-  
-#   count=1
-#   file_path=[]
-#   for pdf in file_names:
-#     path = os.path.join(media_folder, pdf.name)
-#     file_path.append(path)
-#     count+=1
+    print("Completed paths")
     
-#     with open(path, "w") as file:
-#         file.write(pdf)
+
+    json_array = []
     
-  
     for pdf_path in file_path:
         
         type(pdf_path)
-        print("HIIIII")
 
         imgs = convert_pdf_to_images(pdf_path,"imgs" , pdf_path[0:-4], zoom=2)
-        text += get_unstructured_data(imgs)
+        text = get_unstructured_data(imgs)
         print(text)
-        json_text = get_json(text)
+        raw_text = get_json(text)
         
-        print(type(json_text))
-        
-        json_text = json_text.split("```")[1]
-        
-        json_text = json_text.replace('\n', '')
-        json_text = json_text.replace('\\', '')
-        json_text = json_text.replace('  ', '')
-        json_text = json_text.replace('\\\\', '')
-        json_text = json_text.replace('\\"', '')
+        print("In funcion processing " , type(raw_text))
         
         
-        
-        
-        print(json_text)
-        print("Starts converting to json")
-        print(type(json_text))
-        # import ast
-        json_text = json.dumps(json_text)
-        # json_data = ast.literal_eval(json_text[1:])
-        
-        print(json_text)
-        print(type(json_text))
-        
-        return json_text
+        json_array.append( retrieve_json_from_text(raw_text[extract_first_index(raw_text) : extract_last_index(raw_text)] + '}') )
+    return json_array
     
