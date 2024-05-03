@@ -1,7 +1,6 @@
 import os
 import easyocr
 import fitz
-import json
 from together import Together
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
@@ -83,12 +82,12 @@ def convert_pdf_to_images(pdf_path, output_folder, docname, zoom=2):
   print("Started Converting to images")
   os.makedirs(output_folder, exist_ok=True)
 
-
-
+  BASE_DIR = os.path.dirname(__file__) + '\imgs'
+  print(BASE_DIR)
   for i, page in enumerate(doc):
       pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom))
-      filename = os.path.join(output_folder, f"{docname}page_{i+1}.png")
-      
+      filename = os.path.join(BASE_DIR, f"{docname}page_{i+1}.png")
+      print(filename)
       pix.save(filename)
       imgs.append(filename)
   print(f"Converted PDF to {len(doc)} images in {output_folder}")
@@ -158,7 +157,7 @@ def retrieve_json_from_text(text):
 def start_processing(file_names):
     
     file_path = []
-    BASE_DIR = r"C:\Users\Saran\Aravind_Portfolio\iQube\Admissions\Flask_api"
+    BASE_DIR = os.path.dirname(__file__)
     for pdf in file_names:
         print("Starting 1st pdf", pdf)
         filename = secure_filename(pdf.filename)

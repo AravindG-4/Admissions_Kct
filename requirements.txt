@@ -1,7 +1,5 @@
-easyocr
-pymupdf
-together
-json
-flask
-shutil
-werkzeug
+easyocr==1.7.1
+pymupdf==1.24.2
+together==1.1.3
+flask==3.0.3
+werkzeug==3.0.2
