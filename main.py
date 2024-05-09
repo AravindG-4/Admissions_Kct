@@ -9,8 +9,8 @@ load_dotenv()
 
 
 
-def get_prompt(text, type='marksheet'):
-    if type == 'marksheet':
+def get_prompt(text, type):
+    if type.lower() == 'marksheet':
         marksheet_prompt = f'''The following is the extracted unstructured text data from a 10th standard marksheet of an Indian student. The different extracted words are separated in order by commas.
 
 Your task is only to create a JSON containing key-value pairs for the given key format in order.
@@ -26,7 +26,7 @@ IMPORTANT : Subject key must contain a dictionary as value with different subjec
 IMPORTANT : Return only a json string with only given keys and avoid any other information in the output.'''
         return marksheet_prompt
 
-    elif type == 'aadhaar':
+    elif type.lower() == 'aadhaar':
         aadhaar_prompt = f'''The following is the unstructured text data of a indian aadhar card of a student extracted using the EasyOCR package. The different extracted words are separated in order by commas.
 
 Your task is only to create a JSON containing key-value pairs for the given key format in order.
@@ -43,7 +43,7 @@ IMPORTANT : Return only a json string for given keys and avoid any other informa
         return aadhaar_prompt
 
     else:
-        general_prompt = f'''The following is the unstructured text data of a indian aadhar card of a student extracted using the EasyOCR package. The different extracted words are separated in order by commas.
+        general_prompt = f'''The following is the unstructured text data of a student extracted using the EasyOCR package. The different extracted words are separated in order by commas.
 
 Your task is only to create a JSON containing key-value pairs for the given key format in order.
 
@@ -58,11 +58,11 @@ IMPORTANT : Return only a json string for given keys and avoid any other informa
 '''
         return general_prompt
 
-def get_json(text):
+def get_json(text,type):
     
         client = Together(api_key=os.getenv('TOGETHER_API_KEY'))
 
-        prompt = get_prompt(text)
+        prompt = get_prompt(text,type)
 
         response = client.chat.completions.create(
             model="meta-llama/Llama-3-70b-chat-hf",
@@ -154,8 +154,8 @@ def retrieve_json_from_text(text):
 
     return json_data
 
-def start_processing(file_names):
-    
+def start_processing(file_names,keys):
+    # keys = ['marksheet','aadhaar']
     file_path = []
     BASE_DIR = os.path.dirname(__file__)
     for pdf in file_names:
@@ -173,18 +173,19 @@ def start_processing(file_names):
 
     json_array = []
     
-    for pdf_path in file_path:
-        
+    for key in keys:  
+      for pdf_path in file_path:
         type(pdf_path)
 
         imgs = convert_pdf_to_images(pdf_path,"imgs" , pdf_path[0:-4], zoom=2)
         text = get_unstructured_data(imgs)
         print(text)
-        raw_text = get_json(text)
+        raw_text = get_json(text, key)
         
         print("In funcion processing " , type(raw_text))
         
         
         json_array.append( retrieve_json_from_text(raw_text[extract_first_index(raw_text) : extract_last_index(raw_text)] + '}') )
+        break
     return json_array
     

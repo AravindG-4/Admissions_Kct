@@ -10,16 +10,21 @@ def index():
 
 @app.route('/process', methods=['POST'])
 def process_files():
-    if 'files' not in request.files:
+    print("Entered")
+    if 'files' not in request.files or 'keys' not in request.form :
+        print('Files here')
         resp =  jsonify({'error': 'No files found in request'})
         resp.status_code = 400
         print("not found")
         return resp
     files = request.files.getlist('files')  
+    keys = request.form.getlist('keys')  
 
-    print(files)
+    print(type(keys))
+
+    print(files, keys)
     try:
-        output = main.start_processing(files)  
+        output = main.start_processing(files, keys)  
         return jsonify({'output': output}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
