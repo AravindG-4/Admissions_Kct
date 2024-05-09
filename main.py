@@ -173,8 +173,7 @@ def start_processing(file_names,keys):
 
     json_array = []
     
-    for key in keys:  
-      for pdf_path in file_path:
+    for pdf_path, key in zip(file_path, keys):
         type(pdf_path)
 
         imgs = convert_pdf_to_images(pdf_path,"imgs" , pdf_path[0:-4], zoom=2)
@@ -186,6 +185,6 @@ def start_processing(file_names,keys):
         
         
         json_array.append( retrieve_json_from_text(raw_text[extract_first_index(raw_text) : extract_last_index(raw_text)] + '}') )
-        break
+        
     return json_array
     
