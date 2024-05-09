@@ -1,8 +1,8 @@
-from flask import Flask, request, jsonify
-import main 
+from flask import Flask
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 @app.route('/')
 def index():
     return jsonify({'message': 'Hello, World!'}), 200
